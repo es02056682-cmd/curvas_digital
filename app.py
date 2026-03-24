@@ -367,7 +367,7 @@ def load_and_fit(filepath="Raw_data_curvas_v1.csv"):
         elif "fecha" in cl:              rename[c] = "Fecha"
     df = df.rename(columns=rename)
 
-    @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def load_and_fit(file_path):
     df = pd.read_csv(file_path)
     
