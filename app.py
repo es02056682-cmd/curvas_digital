@@ -367,18 +367,33 @@ def load_and_fit(filepath="Raw_data_curvas_v1.csv"):
         elif "fecha" in cl:              rename[c] = "Fecha"
     df = df.rename(columns=rename)
 
-    # Fill missing funnel cols with 0
-    for col in ["Leads_Brutos","Leads_Utiles","Oportunidades","Ventas","Altas"]:
-        if col not in df.columns:
-            df[col] = 0
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    @st.cache_data(show_spinner=False)
+def load_and_fit(file_path):
+    df = pd.read_csv(file_path)
+    
+    # 1. Limpiamos posibles espacios en los nombres de las columnas
+    df.columns = df.columns.str.strip()
 
-    df["Inversion_Fee"] = pd.to_numeric(df["Inversion_Fee"], errors="coerce").fillna(0)
-    df = df[df["Inversion_Fee"] > 0]
+    # 2. Mapeamos los nombres reales de tu CSV a lo que espera el resto de la app
+    # Si tu CSV usa Ventas_BI, lo renombramos a Ventas para que el modelo no rompa
+    rename_dict = {
+        "Ventas_BI": "Ventas",
+        "Leads_brutos_C2C": "Leads_Brutos" # O Leads_brutos_IB según cuál quieras usar
+    }
+    df = df.rename(columns=rename_dict)
 
-    df_paid    = df[~df["SupraCanal"].isin(CANALES_SIN_COSTE)].copy()
-    df_nocoste = df[ df["SupraCanal"].isin(CANALES_SIN_COSTE)].copy()
-
+    # 3. Conversión segura a numérico
+    cols_to_fix = ["Inversion_Fee", "Leads_Brutos", "Ventas", "Altas"]
+    for col in cols_to_fix:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        else:
+            # Si falta la columna, la creamos con ceros para evitar el TypeError
+            df[col] = 0.0
+            
+    # El resto del código sigue igual...
+    df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
+    return df
     # CR per channel
     cr = (
         df_paid.groupby("SupraCanal")
