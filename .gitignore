@@ -1,5 +1,4 @@
 # Data — no subir CSVs con datos reales
-*.csv
 *.xlsx
 *.xls
 
